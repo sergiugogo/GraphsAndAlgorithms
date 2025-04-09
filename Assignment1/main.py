@@ -1,4 +1,5 @@
-from Lab01 import *
+from Lab01 import Graph, BFSIterator, DFSIterator
+from Assignment3 import UCSIterator, BellmanFordIterator
 
 
 def print_menu():
@@ -22,9 +23,12 @@ def print_menu():
     print("17. DFS traversal from a vertex")
     print("18. Create graph from file")
     print("19. Exit")
+    print("20. Run Uniform Cost Search (UCS)")
+    print("21. Run Bellman-Ford Algorithm")
 
 
 def main():
+    # Create a default graph: directed and unweighted initially.
     g = Graph(directed=True, weighted=False)
 
     while True:
@@ -109,7 +113,7 @@ def main():
             else:
                 print("Invalid input.")
                 continue
-            g.change_directed(new_directed)
+            g.change_if_directed(new_directed)
             print(f"Graph mode changed to {'directed' if new_directed else 'undirected'}.")
         elif choice == "13":
             print("Current weighting is", "weighted" if g.weighted else "unweighted")
@@ -121,7 +125,7 @@ def main():
             else:
                 print("Invalid input.")
                 continue
-            g.change_weighted(new_weighted)
+            g.change_if_weighted(new_weighted)
             print(f"Graph weighting changed to {'weighted' if new_weighted else 'unweighted'}.")
         elif choice == "14":
             if not g.weighted:
@@ -174,6 +178,20 @@ def main():
                 print(g)
             except Exception as e:
                 print("Error loading graph from file:", e)
+        elif choice == "20":
+            start_vertex = input("Enter start vertex for UCS: ")
+            goal_vertex = input("Enter goal vertex for UCS: ")
+            result = UCSIterator(g, start_vertex, goal_vertex)
+            print("\nUniform Cost Search (UCS) result:")
+            print(f"Cost: {result['cost']}, Path: {result['path']}, Time: {result['time']:.2f} ms")
+            print("Metrics:", result["metrics"])
+        elif choice == "21":
+            start_vertex = input("Enter start vertex for Bellman-Ford: ")
+            goal_vertex = input("Enter goal vertex for Bellman-Ford: ")
+            result = BellmanFordIterator(g, start_vertex, goal_vertex)
+            print("\nBellman-Ford result:")
+            print(f"Cost: {result['cost']}, Path: {result['path']}, Time: {result['time']:.2f} ms")
+            print("Metrics:", result["metrics"])
         elif choice == "19":
             print("Exiting the program.")
             break
