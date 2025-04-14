@@ -3,106 +3,137 @@ import time
 from Lab01 import Graph
 
 
-class UCSIterator:
+def uniform_cost_search(graph, start, goal):
     """
-    Uniform Cost Search (UCS) implemented as an iterator.
-    Each call to __next__ expands one vertex from the frontier and returns a tuple:
-      (current_vertex, current_cost, path_so_far)
+    Uniform Cost Search (UCS) to find the minimum cost walk from start to goal.
 
-    Note:
-    - The iterator yields intermediate expansion states. When the goal is reached,
-      you might choose to stop iteration (or you can continue yielding intermediate states).
-    - This implementation counts calls to the edge cost function (g.cost) and
-      priority queue push/pop operations if desired (counters can be added similar
-      to the non-iterator version).
+    Parameters:
+        graph: an instance of Graph.
+        start: the starting vertex.
+        goal: the goal vertex.
 
-    Overall time complexity remains O((V+E) * log V) (due to heap operations).
+    Returns:
+        A dictionary with keys:
+         - "cost": total cost of the found path (float; infinity if no path found)
+         - "path": list of vertices from start to goal (or None)
+         - "time": execution time in milliseconds (float)
+         - "metrics": a dictionary containing counters:
+             * "g.cost": number of edge cost evaluations
+             * "pq.push": number of push operations on the priority queue
+             * "pq.pop": number of pop operations from the priority queue
+
+    Overall time complexity: O((V + E) * log V) due to the heap operations.
+
     """
+    start_time = time.time()
 
-    def __init__(self, graph, start, goal):
-        if start not in graph.out_adj_list:
-            raise ValueError("Start vertex does not exist in the graph.")
-        self.graph = graph
-        self.goal = goal
-        self.frontier = []  # priority queue: (cost, vertex, path)
-        heapq.heappush(self.frontier, (0, start, [start]))
-        self.best_cost = {start: 0}
-        self.finished = False  # flag to indicate when goal is reached
+    # Priority queue entries: (cumulative_cost, current_vertex, path_so_far)
+    frontier = []
+    heapq.heappush(frontier, (0, start, [start]))
 
-    def __iter__(self):
-        return self
+    # Maintain best cost found so far per vertex.
+    best_cost = {start: 0}
 
-    def __next__(self):
-        if not self.frontier or self.finished:
-            raise StopIteration
+    # Counters for metrics
+    counters = {"g.cost": 0, "pq.push": 1, "pq.pop": 0}
 
-        current_cost, current_vertex, path = heapq.heappop(self.frontier)
+    while frontier:
+        current_cost, current_vertex, path = heapq.heappop(frontier)
+        counters["pq.pop"] += 1
 
-        # If goal is reached, mark finished and return final state.
-        if current_vertex == self.goal:
-            self.finished = True
-            return (current_vertex, current_cost, path)
+        # If the goal is reached, finish and return result.
+        if current_vertex == goal:
+            end_time = time.time()
+            return {
+                "cost": current_cost,
+                "path": path,
+                "time": (end_time - start_time) * 1000,
+                "metrics": counters
+            }
 
         # Expand neighbors.
-        for neighbor in self.graph.out_adj_list[current_vertex]:
-            cost_to_neighbor = self.graph.get_weight(current_vertex, neighbor) if self.graph.weighted else 1
-            new_cost = current_cost + cost_to_neighbor
-            # Only update if we found a cheaper path.
-            if neighbor not in self.best_cost or new_cost < self.best_cost[neighbor]:
-                self.best_cost[neighbor] = new_cost
+        for neighbor in graph.out_adj_list[current_vertex]:
+            counters["g.cost"] += 1
+            edge_cost = graph.get_weight(current_vertex, neighbor) if graph.weighted else 1
+            new_cost = current_cost + edge_cost
+
+            # Update if a cheaper path is found.
+            if neighbor not in best_cost or new_cost < best_cost[neighbor]:
+                best_cost[neighbor] = new_cost
                 new_path = path + [neighbor]
-                heapq.heappush(self.frontier, (new_cost, neighbor, new_path))
-        return (current_vertex, current_cost, path)
+                heapq.heappush(frontier, (new_cost, neighbor, new_path))
+                counters["pq.push"] += 1
+
+    end_time = time.time()
+    # If no path was found, return an infinite cost and None for the path.
+    return {
+        "cost": float("inf"),
+        "path": None,
+        "time": (end_time - start_time) * 1000,
+        "metrics": counters
+    }
 
 
-class BellmanFordIterator:
+def bellman_ford(graph, start, goal):
     """
-    Bellman-Ford algorithm implemented as an iterator.
-    This iterator yields the state of the algorithm after each full iteration of edge relaxations.
-    Each yielded tuple contains:
-      (iteration_number, dist, pred)
-    where:
-      - dist is the dictionary of current best distances from the start.
-      - pred is the dictionary of predecessors.
+    Bellman-Ford algorithm to find the minimum cost walk from start to goal.
 
-    Overall time complexity is O(V * E). Each iteration over all edges is one step.
+    Parameters:
+        graph: an instance of Graph.
+        start: the starting vertex.
+        goal: the goal vertex.
+
+    Returns:
+        A dictionary with keys:
+         - "cost": total cost from start to goal (float; infinity if no path exists)
+         - "path": list of vertices representing the path (or None)
+         - "time": execution time in milliseconds (float)
+         - "metrics": a dictionary containing:
+             * "g.cost": count of edge relaxations (cost evaluations)
+
+    Overall time complexity: O(V * E), where V is the number of vertices and E the number of edges.
     """
+    start_time = time.time()
 
-    def __init__(self, graph, start):
-        self.graph = graph
-        self.start = start
-        self.vertices = graph.get_vertices()
-        self.dist = {v: float("inf") for v in self.vertices}
-        self.pred = {v: None for v in self.vertices}
-        self.dist[start] = 0
-        self.iteration = 0
-        self.V = graph.get_v()
-        self.finished = False
+    vertices = graph.get_vertices()
+    dist = {v: float("inf") for v in vertices}
+    pred = {v: None for v in vertices}
+    dist[start] = 0
 
-    def __iter__(self):
-        return self
+    counters = {"g.cost": 0}
+    V = len(vertices)
 
-    def __next__(self):
-        if self.finished:
-            raise StopIteration
-
+    # Relax all edges V-1 times.
+    for i in range(V - 1):
         updated = False
-        # Relax all edges.
-        for u in self.graph.out_adj_list:
-            for v in self.graph.out_adj_list[u]:
-                cost_uv = self.graph.get_weight(u, v) if self.graph.weighted else 1
-                if self.dist[u] + cost_uv < self.dist[v]:
-                    self.dist[v] = self.dist[u] + cost_uv
-                    self.pred[v] = u
+        for u in graph.out_adj_list:
+            for v in graph.out_adj_list[u]:
+                counters["g.cost"] += 1
+                edge_cost = graph.get_weight(u, v) if graph.weighted else 1
+                if dist[u] + edge_cost < dist[v]:
+                    dist[v] = dist[u] + edge_cost
+                    pred[v] = u
                     updated = True
+        # Early exit if no update occurs in this full iteration.
+        if not updated:
+            break
 
-        self.iteration += 1
-        # Yield the state after this full pass.
-        current_state = (self.iteration, self.dist.copy(), self.pred.copy())
+    end_time = time.time()
 
-        # If no updates were made or we have done V-1 iterations, stop.
-        if not updated or self.iteration >= self.V - 1:
-            self.finished = True
+    # Reconstruct the path from start to goal.
+    path = []
+    if dist[goal] == float("inf"):
+        path = None
+    else:
+        current = goal
+        while current is not None:
+            path.append(current)
+            current = pred[current]
+        path.reverse()
 
-        return current_state
-
+    return {
+        "cost": dist[goal],
+        "path": path,
+        "time": (end_time - start_time) * 1000,
+        "metrics": counters
+    }
