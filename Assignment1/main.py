@@ -1,6 +1,28 @@
 import time
-from Lab01 import Graph, BFSIterator, DFSIterator  # :contentReference[oaicite:0]{index=0}
-from AlgorithmComparison import compare_algorithms  # :contentReference[oaicite:1]{index=1}
+from Lab01 import Graph, BFSIterator, DFSIterator
+from AlgorithmComparison import compare_algorithms
+from Assignment4 import *
+
+import csv
+
+def load_positions_from_csv(filename):
+    """
+    Loads vertex positions from a CSV file into a dictionary.
+
+    The CSV must have headers: vertex_name, position_x, position_y
+
+    Returns:
+        A dictionary mapping vertex names (as strings) to (x, y) coordinate tuples.
+    """
+    positions = {}
+    with open(filename, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            vertex = row['vertex_name'].strip()
+            x = float(row['position_x'])
+            y = float(row['position_y'])
+            positions[vertex] = (x, y)
+    return positions
 
 def print_menu():
     print("\n--- Graph Algorithms Menu ---")
@@ -23,7 +45,8 @@ def print_menu():
     print("17. DFS traversal from a vertex")
     print("18. Create graph from file")
     print("19. Compare UCS and Bellman-Ford")
-    print("20. Exit")
+    print("20. Tree height")
+    print("21. Exit.")
 
 def main():
     # Create a default graph.
@@ -178,13 +201,29 @@ def main():
             except Exception as e:
                 print("Error loading graph from file:", e)
         elif choice == "19":
-            start_v = input("Enter start vertex for algorithm comparison: ").strip()
-            goal_v = input("Enter goal vertex for algorithm comparison: ").strip()
-            output = compare_algorithms(g, start_v, goal_v)
-            print(output)
+                positions_file = input("Enter the filename for vertex positions CSV: ").strip()
+                try:
+                    positions = load_positions_from_csv(positions_file)
+                    print(f"Loaded {len(positions)} positions.")
+                except Exception as e:
+                    print("Failed to load positions:", e)
+                    continue
+
+                start = input("Start vertex: ").strip()
+                goal = input("Goal vertex: ").strip()
+                print(compare_algorithms(g, start, goal, positions))
         elif choice == "20":
+            root = input("Enter the root vertex: ")
+            try:
+                height = compute_tree_height(g, root)
+                print(f"Tree height from root '{root}': {height}")
+            except Exception as e:
+                print("Error computing tree height:", e)
+
+        elif choice == "21":
             print("Exiting the program.")
             break
+
         else:
             print("Invalid choice. Please try again.")
 
