@@ -45,7 +45,7 @@ def print_menu():
     print("17. DFS traversal from a vertex")
     print("18. Create graph from file")
     print("19. Compare UCS and Bellman-Ford")
-    print("20. Tree height")
+    print("20. Numbers of leafs in a spanning tree with a given root")
     print("21. Exit.")
 
 def main():
@@ -214,11 +214,19 @@ def main():
                 print(compare_algorithms(g, start, goal, positions))
         elif choice == "20":
             root = input("Enter the root vertex: ")
+            mst = kruskal_mst(g)
+            print("\nMinimum Spanning Tree (Edges with Weights):")
+            for u in mst.out_adj_list:
+                for v in mst.out_adj_list[u]:
+                    if not mst.directed and u > v:
+                        continue  # Skip duplicate edges in undirected graph
+                    w = mst.get_weight(u, v)
+                    print(f"{u} -- {v}  [weight = {w}]")
             try:
-                height = compute_tree_height(g, root)
-                print(f"Tree height from root '{root}': {height}")
+                leaf_count = mst_leaf_count_kruskal(g, root)
+                print(f"Number of leaf nodes in the MST: {leaf_count}")
             except Exception as e:
-                print("Error computing tree height:", e)
+                print("Error:", e)
 
         elif choice == "21":
             print("Exiting the program.")
