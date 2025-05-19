@@ -12,6 +12,10 @@ def is_complete(graph):
     return True
 
 
+
+'''
+    we use BFS to color the graph such that no two neighbors have the same color. This means the graph it bipartite
+'''
 def is_complete_bipartite(graph):
     vertices = graph.get_vertices()
     visited = set()
@@ -30,7 +34,7 @@ def is_complete_bipartite(graph):
                     return False
         return True
 
-    for v in vertices:
+    for v in vertices: #I use another BFS to check the connected components
         if v not in color:
             if not bfs(v):
                 return False
@@ -38,12 +42,11 @@ def is_complete_bipartite(graph):
     part1 = [v for v in color if color[v] == 0]
     part2 = [v for v in color if color[v] == 1]
 
+# I make sure that each node in part1 is connected to each node in part2
     for u in part1:
         for v in part2:
             if not graph.is_edge(u, v) and not graph.is_edge(v, u):
                 return False
-
-    # Ensure no edges within partitions
     for u in part1:
         for v in part1:
             if u != v and (graph.is_edge(u, v) or graph.is_edge(v, u)):
@@ -52,15 +55,16 @@ def is_complete_bipartite(graph):
         for v in part2:
             if u != v and (graph.is_edge(u, v) or graph.is_edge(v, u)):
                 return False
+    #the last two fors is to check if there are connections in the same partition
 
     return True
 
 
 def reduce_graph(graph):
-    g = deepcopy(graph)
+    g = deepcopy(graph) # I used the deep copy to make a copy of the original graph so I don't modify the graph directly
     changed = True
 
-    while changed:
+    while changed: #very simple implementation I used changed to redo the for loop everytime I make a change in the graph
         changed = False
         for vertex in list(g.get_vertices()):
             neighbors = list(set(g.out_neighbors(vertex)) | set(g.in_neighbors(vertex)))

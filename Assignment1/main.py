@@ -2,6 +2,8 @@ import time
 from Lab01 import Graph, BFSIterator, DFSIterator
 from AlgorithmComparison import compare_algorithms
 from Assignment4 import *
+from Assignment5 import *
+from Assignment6 import *
 
 import csv
 
@@ -47,6 +49,8 @@ def print_menu():
     print("19. Compare UCS and Bellman-Ford")
     print("20. Numbers of leafs in a spanning tree with a given root")
     print("21. Exit.")
+    print("22. Check if graph is homeomorphic to complete or complete bipartite")
+    print("23. Find a Hamiltonian cycle")
 
 def main():
     # Create a default graph.
@@ -231,6 +235,21 @@ def main():
         elif choice == "21":
             print("Exiting the program.")
             break
+        elif choice == "22":
+            try:
+                if g.directed:
+                    print("This check is only valid for undirected graphs.")
+                else:
+                    result = is_homeomorphic_to_complete_or_bipartite(g)
+                    if result:
+                        print("The graph is homeomorphic to a complete or complete bipartite graph.")
+                    else:
+                        print("The graph is NOT homeomorphic to a complete or complete bipartite graph.")
+            except Exception as e:
+                print("Error:", e)
+
+        elif choice == "23":
+            print(f"{Hamiltonian(g)}")
 
         else:
             print("Invalid choice. Please try again.")
